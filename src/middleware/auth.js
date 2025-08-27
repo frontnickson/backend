@@ -13,9 +13,13 @@ console.log('🔐 Middleware auth.js: getRedisClient:', typeof getRedisClient);
  * Middleware для проверки JWT токена
  */
 const authenticate = async (req, res, next) => {
-  console.log('🔐 Middleware authenticate: ФУНКЦИЯ ВЫЗВАНА!');
+  console.log('🔐 Middleware authenticate: ========== ФУНКЦИЯ ВЫЗВАНА! ==========');
+  console.log('🔐 Middleware authenticate: время вызова:', new Date().toISOString());
+  console.log('🔐 Middleware authenticate: метод запроса:', req.method);
+  console.log('🔐 Middleware authenticate: URL:', req.url);
+  
   try {
-    console.log('🔐 Middleware authenticate: начало проверки');
+    console.log('🔐 Middleware authenticate: ========== НАЧАЛО ПРОВЕРКИ ==========');
     console.log('🔐 Middleware authenticate: заголовки:', JSON.stringify(req.headers, null, 2));
     console.log('🔐 Middleware authenticate: cookies:', JSON.stringify(req.cookies, null, 2));
     let token;
@@ -53,27 +57,51 @@ const authenticate = async (req, res, next) => {
       const decoded = jwt.verify(token, config.jwt.secret);
       console.log('🔐 Middleware authenticate: JWT токен валиден:', decoded);
       
-      // Временно отключаем проверку Redis для тестирования
-      // TODO: Включить обратно после исправления Redis
-      /*
       // Проверяем, не отозван ли токен в Redis
-      const redisClient = getRedisClient();
-      const isTokenRevoked = await redisClient.get(`revoked_token:${token}`);
+      console.log('🔐 Middleware authenticate: ========== НАЧАЛО ПРОВЕРКИ REDIS ==========');
+      console.log('🔐 Middleware authenticate: токен для проверки Redis:', token.substring(0, 50) + '...');
+      console.log('🔐 Middleware authenticate: длина токена:', token.length);
       
-      if (isTokenRevoked) {
-        return res.status(401).json({
-          success: false,
-          error: {
-            message: 'Токен отозван',
-            type: 'TOKEN_REVOKED',
-            statusCode: 401
+      try {
+        console.log('🔐 Middleware authenticate: пытаемся получить Redis клиент...');
+        const redisClient = getRedisClient();
+        console.log('🔐 Middleware authenticate: Redis клиент получен:', typeof redisClient);
+        console.log('🔐 Middleware authenticate: Redis клиент:', redisClient ? 'существует' : 'не существует');
+        
+        if (!redisClient) {
+          console.log('🔐 Middleware authenticate: Redis клиент не получен, пропускаем проверку');
+        } else {
+          console.log('🔐 Middleware authenticate: пытаемся проверить токен в Redis...');
+          const redisKey = `revoked_token:${token}`;
+          console.log('🔐 Middleware authenticate: Redis ключ:', redisKey.substring(0, 50) + '...');
+          
+          const isTokenRevoked = await redisClient.get(redisKey);
+          console.log('🔐 Middleware authenticate: результат Redis get():', isTokenRevoked);
+          console.log('🔐 Middleware authenticate: тип результата Redis:', typeof isTokenRevoked);
+          
+          if (isTokenRevoked) {
+            console.log('🔐 Middleware authenticate: 🚨 ТОКЕН ОТОЗВАН В REDIS!');
+            return res.status(401).json({
+              success: false,
+              error: {
+                message: 'Токен отозван',
+                type: 'TOKEN_REVOKED',
+                statusCode: 401
+              }
+            });
           }
-        });
+          console.log('🔐 Middleware authenticate: ✅ токен НЕ отозван в Redis, продолжаем');
+        }
+      } catch (redisError) {
+        console.error('❌ Ошибка Redis при проверке токена:', redisError);
+        console.error('❌ Stack trace Redis ошибки:', redisError.stack);
+        console.log('🔐 Middleware authenticate: продолжаем без проверки Redis из-за ошибки');
       }
-      */
+      
+      console.log('🔐 Middleware authenticate: ========== КОНЕЦ ПРОВЕРКИ REDIS ==========');
 
-            // Получаем пользователя из базы данных
-      console.log('🔐 Middleware authenticate: ищем пользователя в БД, ID:', decoded.userId);
+      // Получаем пользователя из базы данных
+       console.log('🔐 Middleware authenticate: ищем пользователя в БД, ID:', decoded.userId);
       console.log('🔐 Middleware authenticate: mongoose connection state:', require('mongoose').connection.readyState);
       console.log('🔐 Middleware authenticate: User model:', typeof User);
       console.log('🔐 Middleware authenticate: User.findById:', typeof User.findById);
@@ -122,9 +150,11 @@ const authenticate = async (req, res, next) => {
       user.isOnline = true;
       await user.save();
       console.log('🔐 Middleware authenticate: время обновлено, вызываем next()');
+      console.log('🔐 Middleware authenticate: ========== УСПЕШНО ЗАВЕРШЕНО ==========');
 
       next();
     } catch (jwtError) {
+      console.log('🔐 Middleware authenticate: ========== JWT ОШИБКА ==========');
       console.log('🔐 Middleware authenticate: JWT ошибка:', jwtError.name, jwtError.message);
       console.log('🔐 Middleware authenticate: JWT stack:', jwtError.stack);
       
@@ -151,6 +181,7 @@ const authenticate = async (req, res, next) => {
       });
     }
   } catch (error) {
+    console.log('🔐 Middleware authenticate: ========== ОБЩАЯ ОШИБКА ==========');
     console.error('❌ Ошибка аутентификации:', error);
     console.error('❌ Ошибка аутентификации stack:', error.stack);
     console.error('❌ Ошибка аутентификации name:', error.name);

@@ -108,22 +108,57 @@ app.use('/api/', speedLimiter);
 // CORS настройки
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('🌐 CORS: Запрос от origin:', origin);
+    
     // Разрешаем все origins в режиме разработки
     if (!origin || config.nodeEnv === 'development') {
+      console.log('🌐 CORS: Разрешаем (no origin или development)');
+      return callback(null, true);
+    }
+    
+    // Явно разрешаем фронтенд порты
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:4173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:4173'
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      console.log('🌐 CORS: Разрешаем (frontend origin):', origin);
       return callback(null, true);
     }
     
     // В продакшене проверяем разрешенные origins
     if (config.cors.origin.includes(origin)) {
+      console.log('🌐 CORS: Разрешаем (production origin):', origin);
       return callback(null, true);
     }
     
+    console.log('🌐 CORS: Блокируем origin:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: config.cors.credentials,
+
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Логирование всех входящих запросов
+app.use((req, res, next) => {
+  console.log('🌐 Входящий запрос:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent'],
+    contentType: req.headers['content-type']
+  });
+  next();
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
