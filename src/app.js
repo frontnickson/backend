@@ -107,10 +107,22 @@ app.use('/api/', speedLimiter);
 
 // CORS настройки
 app.use(cors({
-  origin: config.cors.origin,
+  origin: function (origin, callback) {
+    // Разрешаем все origins в режиме разработки
+    if (!origin || config.nodeEnv === 'development') {
+      return callback(null, true);
+    }
+    
+    // В продакшене проверяем разрешенные origins
+    if (config.cors.origin.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: config.cors.credentials,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 }));
 
 // Body parsing middleware

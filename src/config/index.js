@@ -76,7 +76,7 @@ module.exports = {
   
   // CORS configuration
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173'],
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
     credentials: process.env.CORS_CREDENTIALS === 'true',
   },
   
@@ -89,7 +89,7 @@ module.exports = {
   // Socket.io configuration
   socket: {
     cors: {
-      origin: process.env.SOCKET_CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173'],
+      origin: process.env.SOCKET_CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
       credentials: process.env.SOCKET_CREDENTIALS === 'true',
     }
   },
