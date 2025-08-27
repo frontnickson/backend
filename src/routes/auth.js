@@ -1,8 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+
+console.log('🔐 Routes auth.js: загружаем middleware authenticate');
 const { authenticate } = require('../middleware/auth');
+console.log('🔐 Routes auth.js: middleware authenticate загружен:', typeof authenticate);
+
 const { validateRegistration, validateLogin, validatePasswordChange } = require('../validation/authValidation');
+
+/**
+ * @route   POST /api/v1/auth/check-email
+ * @desc    Проверка существования email
+ * @access  Public
+ */
+router.post('/check-email', authController.checkEmailExists);
+
+/**
+ * @route   POST /api/v1/auth/check-username
+ * @desc    Проверка существования username
+ * @access  Public
+ */
+router.post('/check-username', authController.checkUsernameExists);
 
 /**
  * @route   POST /api/v1/auth/register
@@ -38,6 +56,16 @@ router.post('/refresh', authController.refreshToken);
  * @access  Private
  */
 router.get('/me', authenticate, authController.getCurrentUser);
+
+/**
+ * @route   GET /api/v1/auth/test
+ * @desc    Тестовый маршрут без аутентификации
+ * @access  Public
+ */
+router.get('/test', (req, res) => {
+  console.log('🔐 Тестовый маршрут вызван!');
+  res.json({ message: 'Тестовый маршрут работает!' });
+});
 
 /**
  * @route   POST /api/v1/auth/change-password

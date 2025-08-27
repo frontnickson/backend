@@ -43,6 +43,102 @@ const revokeToken = async (token) => {
 };
 
 /**
+ * Проверка существования email
+ * POST /api/v1/auth/check-email
+ */
+const checkEmailExists = async (req, res) => {
+  try {
+    console.log('🔍 Проверка email:', req.body);
+    const { email } = req.body;
+
+    if (!email) {
+      console.log('❌ Email не предоставлен');
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Email обязателен',
+          type: 'MISSING_EMAIL',
+          statusCode: 400
+        }
+      });
+    }
+
+    console.log('🔍 Поиск пользователя с email:', email.toLowerCase());
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    console.log('🔍 Результат поиска:', existingUser ? 'пользователь найден' : 'пользователь не найден');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        exists: !!existingUser,
+        email: email.toLowerCase()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Ошибка проверки email:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Ошибка при проверке email',
+        type: 'CHECK_EMAIL_ERROR',
+        statusCode: 500
+      }
+    });
+  }
+};
+
+/**
+ * Проверка существования username
+ * POST /api/v1/auth/check-username
+ */
+const checkUsernameExists = async (req, res) => {
+  try {
+    console.log('🔍 Проверка username:', req.body);
+    const { username } = req.body;
+
+    if (!username) {
+      console.log('❌ Username не предоставлен');
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Username обязателен',
+          type: 'MISSING_USERNAME',
+          statusCode: 400
+        }
+      });
+    }
+
+    console.log('🔍 Поиск пользователя с username:', username.toLowerCase());
+    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    console.log('🔍 Результат поиска:', existingUser ? 'пользователь найден' : 'пользователь не найден');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        exists: !!existingUser,
+        username: username.toLowerCase()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Ошибка проверки username:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Ошибка при проверке username',
+        type: 'CHECK_USERNAME_ERROR',
+        statusCode: 500
+      }
+    });
+  }
+};
+
+/**
  * Регистрация нового пользователя
  * POST /api/v1/auth/register
  */
@@ -446,10 +542,11 @@ const refreshToken = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password')
-      .populate('friends', 'id username firstName lastName avatarUrl')
-      .populate('teams', 'id name description avatar')
-      .populate('notifications', 'id type message isRead createdAt');
+      .select('-password');
+      // Временно отключаем populate для избежания ошибок с несуществующими моделями
+      // .populate('friends', 'id username firstName lastName avatarUrl')
+      // .populate('teams', 'id name description avatar')
+      // .populate('notifications', 'id type message isRead createdAt');
 
     if (!user) {
       return res.status(404).json({
@@ -696,5 +793,7 @@ module.exports = {
   getCurrentUser,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  checkEmailExists,
+  checkUsernameExists
 };

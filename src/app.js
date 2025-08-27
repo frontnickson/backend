@@ -48,9 +48,25 @@ const io = new Server(server, {
   }
 });
 
-// Подключаемся к базам данных
-connectDB();
-connectRedis();
+// Подключаемся к базам данных асинхронно
+(async () => {
+  try {
+    console.log('🔄 Инициализация подключений к базам данных...');
+    
+    // Подключаемся к MongoDB
+    await connectDB();
+    console.log('✅ MongoDB подключение инициализировано');
+    
+    // Подключаемся к Redis
+    await connectRedis();
+    console.log('✅ Redis подключение инициализировано');
+    
+    console.log('🎉 Все подключения к базам данных инициализированы');
+  } catch (error) {
+    console.error('❌ Ошибка инициализации подключений:', error);
+    // Не завершаем процесс, так как базы данных не критичны для работы
+  }
+})();
 
 // Базовые middleware
 app.use(helmet({
@@ -83,7 +99,7 @@ const limiter = rateLimit({
 const speedLimiter = slowDown({
   windowMs: config.security.rateLimit.windowMs,
   delayAfter: 50,
-  delayMs: config.security.slowDown.delayMs,
+  delayMs: () => config.security.slowDown.delayMs,
 });
 
 app.use('/api/', limiter);
@@ -110,13 +126,22 @@ app.use(hpp());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API маршруты
+console.log('🔐 app.js: загружаем маршруты auth');
 app.use(`/api/${config.apiVersion}/auth`, authRoutes);
+console.log('🔐 app.js: маршруты auth загружены');
+
 app.use(`/api/${config.apiVersion}/users`, userRoutes);
 app.use(`/api/${config.apiVersion}/boards`, boardRoutes);
 app.use(`/api/${config.apiVersion}/tasks`, taskRoutes);
 app.use(`/api/${config.apiVersion}/teams`, teamRoutes);
 app.use(`/api/${config.apiVersion}/statistics`, statisticsRoutes);
 app.use(`/api/${config.apiVersion}/notifications`, notificationRoutes);
+
+// Тестовый маршрут прямо в app.js
+app.get('/api/test', (req, res) => {
+  console.log('🔐 Тестовый маршрут в app.js вызван!');
+  res.json({ message: 'Тестовый маршрут в app.js работает!' });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

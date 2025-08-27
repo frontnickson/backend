@@ -57,6 +57,8 @@ const connectRedis = async () => {
       }
     });
     
+    console.log('✅ Redis клиент инициализирован и готов к использованию');
+    
   } catch (error) {
     console.error('❌ Ошибка подключения к Redis:', error.message);
     // Redis не критичен для работы приложения, поэтому не завершаем процесс

@@ -7,7 +7,6 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email обязателен'],
-    unique: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Некорректный формат email']
@@ -15,7 +14,6 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: [true, 'Имя пользователя обязательно'],
-    unique: true,
     trim: true,
     minlength: [3, 'Имя пользователя должно содержать минимум 3 символа'],
     maxlength: [30, 'Имя пользователя не может превышать 30 символов'],
@@ -153,13 +151,13 @@ const userSchema = new mongoose.Schema({
   }],
   teams: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Team'
+    // ref: 'Team' // Временно отключаем, так как модель Team не существует
   }],
   
   // Уведомления
   notifications: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Notification'
+    // ref: 'Notification' // Временно отключаем, так как модель Notification не существует
   }],
   unreadNotificationsCount: {
     type: Number,
