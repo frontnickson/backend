@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # Backend приложение
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/toolrole_db?authSource=admin
+      - REDIS_URL=redis://:password123@redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./src:/app/src
+    restart: unless-stopped
+    networks:
+      - toolrole-network
+
+  # MongoDB база данных
+  mongodb:
+    image: mongo:5
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - toolrole-network
+
+  # Redis кэш
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes --requirepass password123
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - toolrole-network
+
+  # MongoDB Express (веб-интерфейс для MongoDB)
+  mongo-express:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password123
+      - ME_CONFIG_MONGODB_URL=mongodb://admin:password123@mongodb:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=password123
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - toolrole-network
+
+  # Redis Commander (веб-интерфейс для Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:password123
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - toolrole-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  toolrole-network:
+    driver: bridge
